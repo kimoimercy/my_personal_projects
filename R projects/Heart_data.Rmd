@@ -29,4 +29,24 @@ pairs(data)
 
 ```
 
+###TRAINING MY MODEL
+# Fitting a Logistic Regression Model 
 
+#This is given that our response variable is binary where 1 represents default event, while 2 (now changed to 0) represents no default.
+# We are trying to come up with a model that can predict the future
+```{r}
+#splitting the data automatically
+ data <- as.data.frame(data) ###very important
+library(caTools)
+library(ROCR)
+split_data <- sample.split(data, SplitRatio = 0.8)
+head(split_data)
+View(split_data)
+```
+```{r}
+##splitting the data into training and testing
+train_data <- subset(data, split_data == "TRUE")
+test_data <- subset(data, split_data == "FALSE")
+View(train_data)
+View(test_data)
+```
