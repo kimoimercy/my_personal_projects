@@ -8,4 +8,25 @@ output: html_document
 ```{r}
 print("my first project")
 ```
+##opening up the data set
+```{r}
+library(readr)
+data <- read_csv("C:/Users/lenovo/OneDrive - Strathmore University/Desktop/second year/THIRD YEAR/Applied analytics for finance/heart_failure.csv")
+head(data)
+```
+
+##viewing the data
+```{r}
+View(data)
+```
+
+##Creating a scatterplot matrix
+```{r}
+library(ggplot2)
+library(GGally)
+ggpairs(data, columns = c(1,4,6,13),title = "Scatterplot matrix for heart data set", axisLabels = "show")
+pairs(data)
+
+```
+
 
