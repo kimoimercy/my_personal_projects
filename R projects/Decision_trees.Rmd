@@ -1,0 +1,162 @@
+---
+title: "Decision Trees"
+author: "Mercy"
+date: "2023-10-27"
+output: html_document
+---
+
+```{r}
+View(LoanApproval)
+head(LoanApproval)
+```
+
+##converting to a data frame
+```{r}
+LoanApproval <- as.data.frame(LoanApproval)
+class(LoanApproval)
+```
+
+
+### Data Exploration
+```{r}
+str(LoanApproval) ###displays the structure
+```
+
+```{r}
+names(LoanApproval)
+```
+
+```{r}
+summary(LoanApproval)
+```
+
+```{r}
+
+##checking for missing data
+sum(is.na(LoanApproval))
+```
+
+###DATA PREPROCESSING
+#splitting the data into training and testing
+```{r}
+set.seed(22)
+library(caTools)
+sample <- sample.split(LoanApproval$Approval, SplitRatio = 0.7)
+
+traindata <- subset(LoanApproval, sample == TRUE)
+testdata <- subset(LoanApproval, sample== FALSE)
+
+head(traindata)
+```
+
+```{r}
+head(testdata)
+```
+###BUILDING THE PREDICTIVE MODEL
+
+```{r}
+library(rpart)
+approvalModel <- rpart(Approval~., data =traindata, method = "class",parms = list(split = "information"), cp = -1)
+
+approvalModel
+```
+
+
+####MODEL VISUALIZATION
+```{r}
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+##creating the decision tree
+fancyRpartPlot(approvalModel)
+```
+
+##for even better visualization, zoom in to a specific portion of the tree
+```{r}
+## show the trre at depth=4 for better visualization
+approvalTreeModel <- rpart(Approval ~., data = traindata, method = "class",parms=list(split = "information"),maxdepth = 4, minsplit= 2, minbucket=2)
+approvalTreeModel
+```
+
+```{r}
+fancyRpartPlot(approvalTreeModel)
+```
+###MODEL IMPROVEMENTS
+##The complexity parameter (cp) is a measure of the size (complexity) of the tree. If adding a variable results in a higher cp value, then that branch is pruned. This cp value thus helps avoid overfitting the model
+
+```{r}
+printcp(approvalTreeModel)
+
+```
+
+```{r}
+plotcp(approvalTreeModel)
+```
+
+## From the printcp output, we see that the optimal cp value is 0.01 (optimal cp =0.01)(its at level 4 in the ouput above). A good threshold for pruning will therefore be a value slightly higher, e.g., 0.02. 
+
+##We now feed this threshold into the prune() function and generate a much simpler and efficient decision tree.
+
+```{r}
+#the pruned tree model
+## since the cp value is greater than 0.01, set to 0.02
+approvalTreeModel.pruned <- prune(approvalTreeModel, cp=0.02)
+approvalTreeModel.pruned
+```
+
+
+```{r}
+#showing the pruned tree
+fancyRpartPlot(approvalTreeModel.pruned)
+```
+
+### MAKING PREDICTIONS.
+#Once we have an efficient decision tree model, we can now move on to predicting loan approvals.
+
+```{r}
+pred <- predict(approvalTreeModel.pruned, newdata = testdata, type = "class")
+```
+
+```{r}
+##checking the class
+class(pred)
+```
+```{r}
+###changing the class to a data frame
+pred.df <- data.frame(pred)
+class(pred.df)
+
+```
+```{r}
+head(pred.df)
+```
+### EXAMINING THE CONFUSION MATRIX
+```{r}
+#creating the confusion matrix
+table(testdata$Approval, pred.df$pred)
+```
+
+```{r}
+#showing how well the classification model is performing.
+classification.error <- mean(pred.df$pred != testdata$Approval)
+classification.error
+```
+```{r}
+###For accuracy
+accuracy <- 1 - classification.error
+accuracy
+
+```
+
+##The model gives an accuracy of 97%, with only a small misclassification probability of 2.8%, giving confidence in its prediction ability.
+# The actual probabilities of acceptance or rejection for each loan are given below:
+
+```{r}
+probMatrix <- predict(approvalTreeModel.pruned, newdata=testdata, type="prob")
+## changing the class to a data frame
+probMatrix.df <- data.frame(probMatrix)
+#Show the matrix, where X0 denotes prob(No) and X1 denotes prob(Yes)
+options(scipen = 999 )
+head(probMatrix.df)
+```
